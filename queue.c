@@ -5,7 +5,9 @@
 #include "harness.h"
 #include "queue.h"
 
-
+/*
+ * Function prototypes
+ */
 struct list_head *merge_sort(struct list_head *head);
 struct list_head *mergeTwoLists(struct list_head *L1, struct list_head *L2);
 
@@ -281,6 +283,9 @@ void q_sort(struct list_head *head)
     head->prev = curr;
 }
 
+/*
+ * Split one list to two sublists
+ */
 struct list_head *merge_sort(struct list_head *head)
 {
     if (!head || !head->next)
@@ -296,6 +301,9 @@ struct list_head *merge_sort(struct list_head *head)
     return mergeTwoLists(left, right);
 }
 
+/*
+ * Merge two sublists to one sorted list
+ */
 struct list_head *mergeTwoLists(struct list_head *L1, struct list_head *L2)
 {
     struct list_head *head = NULL, **ptr = &head;
