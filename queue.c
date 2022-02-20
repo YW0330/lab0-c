@@ -5,6 +5,11 @@
 #include "harness.h"
 #include "queue.h"
 
+
+struct list_head *merge_sort(struct list_head *head);
+struct list_head *mergeTwoLists(struct list_head *L1, struct list_head *L2);
+
+
 /* Notice: sometimes, Cppcheck would find the potential NULL pointer bugs,
  * but some of them cannot occur. You can suppress them by adding the
  * following line.
@@ -27,8 +32,10 @@ struct list_head *q_new()
 /* Free all storage used by queue */
 void q_free(struct list_head *l)
 {
+    if (!l)
+        return;
     while (!list_empty(l))
-        q_release_element(list_first_entry(l, element_t, list));
+        q_release_element(q_remove_head(l, NULL, 0));
     free(l);
 }
 
@@ -43,11 +50,11 @@ bool q_insert_head(struct list_head *head, char *s)
 {
     if (!head)
         return false;
-    int len = strlen(s);
     element_t *element = malloc(sizeof(element_t));
     if (!element)
         return false;
     INIT_LIST_HEAD(&element->list);
+    int len = strlen(s);
     element->value = malloc((len + 1) * sizeof(char));
     if (!element->value) {
         free(element);
@@ -70,11 +77,11 @@ bool q_insert_tail(struct list_head *head, char *s)
 {
     if (!head)
         return false;
-    int len = strlen(s);
     element_t *element = malloc(sizeof(element_t));
     if (!element)
         return false;
     INIT_LIST_HEAD(&element->list);
+    int len = strlen(s);
     element->value = malloc((len + 1) * sizeof(char));
     if (!element->value) {
         free(element);
@@ -169,12 +176,12 @@ bool q_delete_mid(struct list_head *head)
     if (!head || list_empty(head))
         return false;
     struct list_head **mid = &head;
-    struct list_head *fast = head;
-    do {
+    struct list_head *fast = head->next;
+    while (fast != head && fast->next != head) {
         mid = &(*mid)->next;
         fast = fast->next->next;
-    } while (head != fast->next && head != fast);
-    q_release_element(q_remove_head((*mid)->prev, NULL, 0));
+    }
+    q_release_element(q_remove_head(*mid, NULL, 0));
     return true;
 }
 
@@ -212,7 +219,6 @@ bool q_delete_dup(struct list_head *head)
             next = next->next;
         }
     }
-
     return true;
 }
 
@@ -222,6 +228,15 @@ bool q_delete_dup(struct list_head *head)
 void q_swap(struct list_head *head)
 {
     // https://leetcode.com/problems/swap-nodes-in-pairs/
+    if (!head || list_empty(head) || list_is_singular(head))
+        return;
+    struct list_head *first = head->next, *second = first->next;
+    while (first != head && second != head) {
+        list_del_init(first);
+        list_add(first, second);
+        first = first->next;
+        second = first->next;
+    }
 }
 
 /*
@@ -254,4 +269,48 @@ void q_sort(struct list_head *head)
 {
     if (!head || list_empty(head) || list_is_singular(head))
         return;
+    head->prev->next = NULL;
+    head->next = merge_sort(head->next);
+    struct list_head *curr = head, *next = curr->next;
+    while (next) {
+        next->prev = curr;
+        curr = next;
+        next = next->next;
+    }
+    curr->next = head;
+    head->prev = curr;
+}
+
+struct list_head *merge_sort(struct list_head *head)
+{
+    if (!head || !head->next)
+        return head;
+    struct list_head *slow = head;
+    for (struct list_head *fast = head->next; fast && fast->next;
+         fast = fast->next->next) {
+        slow = slow->next;
+    }
+    struct list_head *mid = slow->next;
+    slow->next = NULL;
+    struct list_head *left = merge_sort(head), *right = merge_sort(mid);
+    return mergeTwoLists(left, right);
+}
+
+struct list_head *mergeTwoLists(struct list_head *L1, struct list_head *L2)
+{
+    struct list_head *head = NULL, **ptr = &head;
+    while (L1 && L2) {
+        element_t *L1_entry = list_entry(L1, element_t, list);
+        element_t *L2_entry = list_entry(L2, element_t, list);
+        if (strcmp(L1_entry->value, L2_entry->value) < 0) {
+            *ptr = L1;
+            L1 = L1->next;
+        } else {
+            *ptr = L2;
+            L2 = L2->next;
+        }
+        ptr = &(*ptr)->next;
+    }
+    *ptr = (struct list_head *) ((u_int64_t) L1 | (u_int64_t) L2);
+    return head;
 }
