@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -306,19 +307,15 @@ struct list_head *merge_sort(struct list_head *head)
  */
 struct list_head *mergeTwoLists(struct list_head *L1, struct list_head *L2)
 {
-    struct list_head *head = NULL, **ptr = &head;
+    struct list_head *head = NULL, **ptr = &head, **node = NULL;
     while (L1 && L2) {
         element_t *L1_entry = list_entry(L1, element_t, list);
         element_t *L2_entry = list_entry(L2, element_t, list);
-        if (strcmp(L1_entry->value, L2_entry->value) < 0) {
-            *ptr = L1;
-            L1 = L1->next;
-        } else {
-            *ptr = L2;
-            L2 = L2->next;
-        }
+        node = strcmp(L1_entry->value, L2_entry->value) < 0 ? &L1 : &L2;
+        *ptr = *node;
         ptr = &(*ptr)->next;
+        *node = (*node)->next;
     }
-    *ptr = (struct list_head *) ((u_int64_t) L1 | (u_int64_t) L2);
+    *ptr = (struct list_head *) ((uintptr_t) L1 | (uintptr_t) L2);
     return head;
 }
