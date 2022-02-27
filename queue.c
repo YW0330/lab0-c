@@ -203,23 +203,19 @@ bool q_delete_dup(struct list_head *head)
     if (!head || list_empty(head) || list_is_singular(head))
         return false;
     bool diff = false;
-    struct list_head *curr = head->next, *next = curr->next;
-    while (curr != head && next != head) {
+    struct list_head *curr, *safe;
+    list_for_each_safe (curr, safe, head) {
+        struct list_head *next = curr->next;
         element_t *curr_entry = list_entry(curr, element_t, list);
         element_t *next_entry = list_entry(next, element_t, list);
-        if (!strcmp(curr_entry->value, next_entry->value)) {
+        if ((next != head) && (!strcmp(curr_entry->value, next_entry->value))) {
+            list_del(curr);
+            q_release_element(curr_entry);
             diff = true;
-            list_del(next);
-            q_release_element(next_entry);
-            next = curr->next;
-        } else {
-            if (diff) {
-                list_del(curr);
-                q_release_element(curr_entry);
-                diff = false;
-            }
-            curr = next;
-            next = next->next;
+        } else if (diff) {
+            list_del(curr);
+            q_release_element(curr_entry);
+            diff = false;
         }
     }
     return true;
